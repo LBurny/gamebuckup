@@ -1,0 +1,13 @@
+bin/
+obj/
+dist/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+*.pext
+*.log
+
+# 界面截图不随仓库分发，保留在本地
+docs/ui-phase1.png

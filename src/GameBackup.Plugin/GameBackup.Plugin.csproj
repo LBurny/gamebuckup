@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>GameBackup.Plugin</AssemblyName>
+    <RootNamespace>GameBackup.Plugin</RootNamespace>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameBackup.Core\GameBackup.Core.csproj" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net462" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="Playnite.SDK">
+      <HintPath>$(PlayniteDir)\Playnite.SDK.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Security" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="extension.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

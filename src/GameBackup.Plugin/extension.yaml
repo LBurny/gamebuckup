@@ -1,0 +1,10 @@
+Id: GameBackup
+Name: GameBackup
+Author: Lele Li
+Version: 0.1.0
+Module: GameBackup.Plugin.dll
+Type: GenericPlugin
+Icon: icon.png
+Links:
+  - Name: Project
+    Url: https://github.com/LBurny/gamebuckup

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.426
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # GameBackup.Plugin references Playnite.SDK.dll from a local Playnite install,
+      # which isn't available on CI, so only the core library and its tests are built here.
+      - name: Build and test core
+        run: dotnet test tests/GameBackup.Core.Tests/GameBackup.Core.Tests.csproj -c Release --logger "console;verbosity=normal"

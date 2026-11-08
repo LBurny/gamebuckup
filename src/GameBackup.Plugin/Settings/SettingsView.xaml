@@ -1,0 +1,246 @@
+<UserControl x:Class="GameBackup.Plugin.Settings.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource WindowBackgourndBrush}"
+             FontFamily="{DynamicResource FontFamily}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/GameBackup.Plugin;component/UI/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="24,24,24,16">
+            <TextBlock Text="GameBackup 设置" Style="{StaticResource GB.PageTitle}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Margin="24,0,24,0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <Border Style="{StaticResource GB.Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="备份" Style="{StaticResource GB.SectionTitle}" />
+                        <Grid Margin="0,16,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="170" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="备份目录" Style="{StaticResource GB.SettingsLabel}" />
+                            <Grid Grid.Column="1" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding BackupRoot, UpdateSourceTrigger=PropertyChanged}"
+                                         VerticalAlignment="Center"
+                                         Padding="8,6"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         Background="{DynamicResource ControlBackgroundBrush}"
+                                         BorderBrush="{DynamicResource PanelSeparatorBrush}" />
+                                <Button Grid.Column="1"
+                                        Content="浏览…"
+                                        Style="{StaticResource GB.SecondaryButton}"
+                                        Margin="8,0,0,0"
+                                        Command="{Binding BrowseCommand}" />
+                            </Grid>
+
+                            <TextBlock Grid.Row="1" Text="保留份数" Style="{StaticResource GB.SettingsLabel}" />
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
+                                <TextBox Width="88"
+                                         Text="{Binding KeepBackupsText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         Background="{DynamicResource ControlBackgroundBrush}"
+                                         BorderBrush="{DynamicResource PanelSeparatorBrush}" />
+                                <TextBlock Text="每款游戏最多保留的完整备份数量"
+                                           Style="{StaticResource GB.Tiny}"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GB.Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="云存档" Style="{StaticResource GB.SectionTitle}" />
+                        <CheckBox Content="不要在这些平台上备份云支持的游戏"
+                                  IsChecked="{Binding SkipCloudSyncedBackups}"
+                                  Foreground="{DynamicResource TextBrush}"
+                                  Margin="0,16,0,0" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,12,0,0"
+                                    IsEnabled="{Binding SkipCloudSyncedBackups}">
+                            <CheckBox Content="Epic"
+                                      IsChecked="{Binding SkipEpic}"
+                                      Foreground="{DynamicResource TextBrush}"
+                                      Margin="0,0,18,0" />
+                            <CheckBox Content="GOG"
+                                      IsChecked="{Binding SkipGog}"
+                                      Foreground="{DynamicResource TextBrush}"
+                                      Margin="0,0,18,0" />
+                            <CheckBox Content="Origin / EA"
+                                      IsChecked="{Binding SkipOrigin}"
+                                      Foreground="{DynamicResource TextBrush}"
+                                      Margin="0,0,18,0" />
+                            <CheckBox Content="Steam"
+                                      IsChecked="{Binding SkipSteam}"
+                                      Foreground="{DynamicResource TextBrush}"
+                                      Margin="0,0,18,0" />
+                            <CheckBox Content="育碧 Uplay"
+                                      IsChecked="{Binding SkipUbisoft}"
+                                      Foreground="{DynamicResource TextBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GB.Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="自动化" Style="{StaticResource GB.SectionTitle}" />
+                        <CheckBox Content="游戏退出后自动备份"
+                                  IsChecked="{Binding AutoBackupOnExit}"
+                                  Foreground="{DynamicResource TextBrush}"
+                                  Margin="0,16,0,0" />
+                        <TextBlock Text="备份在后台执行，不会阻塞游戏启动；失败时会通过 Playnite 通知提示。"
+                                   Style="{StaticResource GB.Tiny}"
+                                   TextWrapping="Wrap"
+                                   Margin="24,6,0,0" />
+
+                        <CheckBox Content="游戏退出时询问是否备份"
+                                  IsChecked="{Binding AskOnGameExit}"
+                                  Foreground="{DynamicResource TextBrush}"
+                                  Margin="0,14,0,0" />
+                        <TextBlock Text="退出后弹出「是，总是 / 否，永不 / 是 / 否」；前两项会记住这款游戏的选择，之后不再询问。"
+                                   Style="{StaticResource GB.Tiny}"
+                                   TextWrapping="Wrap"
+                                   Margin="24,6,0,0" />
+
+                        <TextBlock Text="备份通知"
+                                   Style="{StaticResource GB.SettingsLabel}"
+                                   Margin="0,18,0,0" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <RadioButton Content="始终通知"
+                                         IsChecked="{Binding NotifyAlways}"
+                                         Foreground="{DynamicResource TextBrush}" />
+                            <RadioButton Content="仅备份失败时通知"
+                                         IsChecked="{Binding NotifyFailuresOnly}"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         Margin="20,0,0,0" />
+                        </StackPanel>
+                        <TextBlock Text="成功备份和恢复都会弹出 Playnite 通知；选择「仅备份失败时通知」后只保留失败提示。"
+                                   Style="{StaticResource GB.Tiny}"
+                                   TextWrapping="Wrap"
+                                   Margin="24,6,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GB.Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="智能定位" Style="{StaticResource GB.SectionTitle}" />
+                        <CheckBox Content="允许在本地规则与已知数据都未命中时调用 AI"
+                                  IsChecked="{Binding EnableLlm}"
+                                  Foreground="{DynamicResource TextBrush}"
+                                  Margin="0,16,0,0" />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="170" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="服务地址" Style="{StaticResource GB.SettingsLabel}" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding LlmEndpoint, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="8,6"
+                                     Margin="0,0,0,10"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     Background="{DynamicResource ControlBackgroundBrush}"
+                                     BorderBrush="{DynamicResource PanelSeparatorBrush}" />
+
+                            <TextBlock Grid.Row="1" Text="模型" Style="{StaticResource GB.SettingsLabel}" />
+                            <TextBox Grid.Row="1" Grid.Column="1"
+                                     Text="{Binding LlmModel, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="8,6"
+                                     Margin="0,0,0,10"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     Background="{DynamicResource ControlBackgroundBrush}"
+                                     BorderBrush="{DynamicResource PanelSeparatorBrush}" />
+
+                            <TextBlock Grid.Row="2" Text="API Key" Style="{StaticResource GB.SettingsLabel}" />
+                            <Grid Grid.Row="2" Grid.Column="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="ApiKeyBox"
+                                             Padding="8,6"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             Background="{DynamicResource ControlBackgroundBrush}"
+                                             BorderBrush="{DynamicResource PanelSeparatorBrush}"
+                                             PasswordChanged="ApiKeyBox_PasswordChanged" />
+                                <Button Grid.Column="1"
+                                        Content="测试连接"
+                                        Style="{StaticResource GB.SecondaryButton}"
+                                        Margin="8,0,0,0"
+                                        Command="{Binding TestConnectionCommand}" />
+                            </Grid>
+                        </Grid>
+
+                        <TextBlock Text="默认只发送游戏名、安装路径和受限的目录列表，不发送文件内容；API Key 使用 Windows DPAPI 加密保存。"
+                                   Style="{StaticResource GB.Tiny}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,14,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GB.Card}">
+                    <StackPanel>
+                        <TextBlock Text="关于" Style="{StaticResource GB.SectionTitle}" />
+                        <TextBlock Text="GameBackup 0.1.0"
+                                   Style="{StaticResource GB.Body}"
+                                   Margin="0,12,0,0" />
+                        <TextBlock Text="为 Playnite 打造的存档管理插件。定位链、备份引擎与 AI 能力会按阶段接入。"
+                                   Style="{StaticResource GB.Tiny}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" Margin="24,12,24,20">
+            <TextBlock Text="{Binding StatusText}"
+                       Style="{StaticResource GB.Tiny}"
+                       VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="关闭"
+                        Style="{StaticResource GB.SecondaryButton}"
+                        Margin="0,0,8,0"
+                        Command="{Binding CloseCommand}" />
+                <Button Content="保存"
+                        Style="{StaticResource GB.PrimaryButton}"
+                        Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,456 @@
+<UserControl x:Class="GameBackup.Plugin.UI.GameBackupPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:GameBackup.Plugin.UI.Converters"
+             Background="{DynamicResource WindowBackgourndBrush}"
+             FontFamily="{DynamicResource FontFamily}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/GameBackup.Plugin;component/UI/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:PathToImageConverter x:Key="PathToImage" />
+            <conv:StatusBrushConverter x:Key="StatusBrush" />
+            <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+            <conv:NullToVisibilityConverter x:Key="NullToVisibility" />
+
+            <DataTemplate x:Key="FilterLabelTemplate">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Label}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" />
+                    <TextBlock Text="{Binding Count}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Opacity="0.65"
+                               Margin="4,0,0,0"
+                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="GameRowTemplate">
+                <Grid Height="62">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Width="40" Height="52"
+                            Margin="0,0,12,0"
+                            CornerRadius="4"
+                            ClipToBounds="True"
+                            Background="{DynamicResource ControlBackgroundBrush}"
+                            BorderBrush="{DynamicResource PanelSeparatorBrush}"
+                            BorderThickness="1">
+                        <Grid>
+                            <TextBlock Text="{Binding Initial}"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource GlyphBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                            <Image Source="{Binding CoverPath, Converter={StaticResource PathToImage}, ConverterParameter=96}"
+                                   Stretch="UniformToFill" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}"
+                                   Style="{StaticResource GB.Body}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <Ellipse Width="6" Height="6"
+                                     Fill="{Binding Status, Converter={StaticResource StatusBrush}}"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,5,0" />
+                            <TextBlock Text="{Binding StatusText}" Style="{StaticResource GB.Tiny}" />
+                            <TextBlock Text="·" Style="{StaticResource GB.Tiny}" Margin="5,0" />
+                            <TextBlock Text="{Binding Source}" Style="{StaticResource GB.Tiny}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding BackupSizeText}"
+                               Style="{StaticResource GB.Tiny}"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="DetailTemplate">
+                <Grid Margin="24,22,24,22">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}"
+                                       FontSize="26"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Border Style="{StaticResource GB.Pill}">
+                                    <TextBlock Text="{Binding Source}"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               Foreground="{DynamicResource TextBrush}" />
+                                </Border>
+                                <Border Style="{StaticResource GB.Pill}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="6" Height="6"
+                                                 Fill="{Binding Status, Converter={StaticResource StatusBrush}}"
+                                                 VerticalAlignment="Center"
+                                                 Margin="0,0,5,0" />
+                                        <TextBlock Text="{Binding StatusText}"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   Foreground="{DynamicResource TextBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="{Binding InstallDirectory}"
+                                       Style="{StaticResource GB.Muted}"
+                                       Margin="0,14,0,0"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding InstallDirectory}" />
+                        </StackPanel>
+
+                        <Border Grid.Column="1"
+                                Width="104" Height="140"
+                                Margin="20,0,0,0"
+                                CornerRadius="6"
+                                ClipToBounds="True"
+                                Background="{DynamicResource WindowBaseBackgroundBrush}"
+                                BorderBrush="{DynamicResource PanelSeparatorBrush}"
+                                BorderThickness="1">
+                            <Grid>
+                                <TextBlock Text="{Binding Initial}"
+                                           FontSize="34"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource GlyphBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                                <Image Source="{Binding CoverPath, Converter={StaticResource PathToImage}, ConverterParameter=208}"
+                                       Stretch="UniformToFill" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,20,0,20">
+                        <Button Content="立即备份"
+                                Style="{StaticResource GB.PrimaryButton}"
+                                Margin="0,0,8,0"
+                                Command="{Binding DataContext.BackupCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" />
+                        <Button Content="恢复…"
+                                Style="{StaticResource GB.SecondaryButton}"
+                                Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" />
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+
+                            <Border x:Name="SaveLocationCard" Style="{StaticResource GB.Card}" Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Text="存档位置"
+                                                   Style="{StaticResource GB.SectionTitle}"
+                                                   VerticalAlignment="Center" />
+
+                                        <StackPanel Grid.Column="1"
+                                                    Orientation="Horizontal"
+                                                    VerticalAlignment="Center"
+                                                    Margin="16,0,0,0">
+                                            <Button Content="确认此位置"
+                                                    Style="{StaticResource GB.PrimaryButton}"
+                                                    Margin="0,0,8,0"
+                                                    Visibility="{Binding IsCandidate, Converter={StaticResource BoolToVisibility}}"
+                                                    Command="{Binding DataContext.ConfirmCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" />
+                                            <Button Content="查找存档"
+                                                    Style="{StaticResource GB.PrimaryButton}"
+                                                    Margin="0,0,8,0"
+                                                    Visibility="{Binding HasLocation, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}"
+                                                    Command="{Binding DataContext.LocateCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" />
+                                            <Button Content="打开目录"
+                                                    Style="{StaticResource GB.SecondaryButton}"
+                                                    Margin="0,0,8,0"
+                                                    Visibility="{Binding HasLocation, Converter={StaticResource BoolToVisibility}}"
+                                                    Command="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" />
+                                            <Button Content="重新查找"
+                                                    Style="{StaticResource GB.SecondaryButton}"
+                                                    Visibility="{Binding HasLocation, Converter={StaticResource BoolToVisibility}}"
+                                                    Command="{Binding DataContext.LocateCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <StackPanel Grid.Row="1">
+                                        <StackPanel Visibility="{Binding HasLocation, Converter={StaticResource BoolToVisibility}}">
+                                            <Border Background="{DynamicResource WindowBaseBackgroundBrush}"
+                                                    BorderBrush="{DynamicResource PanelSeparatorBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                    Padding="10,8"
+                                                    Margin="0,12,0,0">
+                                                <TextBlock Text="{Binding SavePath}"
+                                                           Style="{StaticResource GB.Body}"
+                                                           TextWrapping="Wrap" />
+                                            </Border>
+                                            <TextBlock Text="{Binding LocationSourceText}"
+                                                       Style="{StaticResource GB.Tiny}"
+                                                       Margin="0,8,0,0" />
+                                        </StackPanel>
+
+                                        <StackPanel Visibility="{Binding HasLocation, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}">
+                                            <TextBlock Text="尚未定位存档位置"
+                                                       Style="{StaticResource GB.Body}"
+                                                       Margin="0,12,0,0" />
+                                            <TextBlock Text="GameBackup 会依次检查本地规则、Steam AppID、常见存档目录和游戏会话记录；仍找不到时再交给 AI 分析。确认一次后会写入本地规则，下次直接命中。"
+                                                       Style="{StaticResource GB.Tiny}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,6,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border x:Name="BackupOverviewCard" Style="{StaticResource GB.Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="备份概览" Style="{StaticResource GB.SectionTitle}" />
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="84" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="最近备份"
+                                                   Style="{StaticResource GB.Tiny}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding LastBackupText}"
+                                                   Style="{StaticResource GB.Body}"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                    <TextBlock Text="还没有为这款游戏创建备份。"
+                                               Margin="0,6,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource GB.Tiny}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding LastBackupText}" Value="—">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <Border x:Name="HistoryCard" Style="{StaticResource GB.Card}">
+                                <StackPanel>
+                                    <TextBlock Text="历史记录" Style="{StaticResource GB.SectionTitle}" />
+
+                                    <ItemsControl ItemsSource="{Binding Versions}"
+                                                  Margin="0,10,0,0"
+                                                  Visibility="{Binding HasVersions, Converter={StaticResource BoolToVisibility}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,5,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Ellipse Width="6" Height="6"
+                                                             Fill="{DynamicResource GlyphBrush}"
+                                                             VerticalAlignment="Center"
+                                                             Margin="2,0,10,0" />
+
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding TimeText}"
+                                                                   Style="{StaticResource GB.Body}" />
+                                                        <TextBlock Text="{Binding FileCountText}"
+                                                                   Style="{StaticResource GB.Tiny}"
+                                                                   Margin="0,2,0,0" />
+                                                    </StackPanel>
+
+                                                    <TextBlock Grid.Column="2"
+                                                               Text="{Binding SizeText}"
+                                                               Style="{StaticResource GB.Tiny}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="12,0,0,0" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <StackPanel Margin="0,16,0,4"
+                                                HorizontalAlignment="Center"
+                                                Visibility="{Binding HasVersions, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}">
+                                        <TextBlock Text="&#xE81C;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="24"
+                                                   Foreground="{DynamicResource GlyphBrush}"
+                                                   HorizontalAlignment="Center" />
+                                        <TextBlock Text="暂无历史记录"
+                                                   Style="{StaticResource GB.Body}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,8,0,0" />
+                                        <TextBlock Text="完成第一次备份后，这里会显示时间线。"
+                                                   Style="{StaticResource GB.Tiny}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="24,36,24,14">
+            <TextBlock Text="GameBackup"
+                       Style="{StaticResource GB.PageTitle}"
+                       VerticalAlignment="Center" />
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="24,0,24,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="ListPaneColumn" Width="380" MinWidth="320" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" MinWidth="360" />
+            </Grid.ColumnDefinitions>
+
+            <DockPanel Grid.Column="0">
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Height="34"
+                             Style="{StaticResource GB.SearchBox}"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0">
+                        <Button Style="{StaticResource GB.ToolButton}"
+                                Content="&#xE72C;"
+                                ToolTip="刷新"
+                                Command="{Binding RefreshCommand}" />
+                        <Button Style="{StaticResource GB.ToolButton}"
+                                Content="&#xE713;"
+                                ToolTip="设置"
+                                Margin="4,0,0,0"
+                                Command="{Binding OpenSettingsCommand}" />
+                    </StackPanel>
+                </Grid>
+
+                <ListBox DockPanel.Dock="Top"
+                         Height="34"
+                         Style="{StaticResource GB.FilterList}"
+                         ItemContainerStyle="{StaticResource GB.FilterItem}"
+                         ItemTemplate="{StaticResource FilterLabelTemplate}"
+                         ItemsSource="{Binding Filters}"
+                         SelectedItem="{Binding SelectedFilter}"
+                         Margin="0,0,0,8" />
+
+                <ListBox DockPanel.Dock="Top"
+                         Style="{StaticResource GB.SourceFilterList}"
+                         ItemContainerStyle="{StaticResource GB.SourceFilterItem}"
+                         ItemTemplate="{StaticResource FilterLabelTemplate}"
+                         ItemsSource="{Binding Sources}"
+                         SelectedItem="{Binding SelectedSource}"
+                         PreviewMouseLeftButtonDown="OnSourceFilterClicked"
+                         Margin="0,0,0,4" />
+
+                <ListBox Style="{StaticResource GB.GameList}"
+                         ItemContainerStyle="{StaticResource GB.GameListItem}"
+                         ItemTemplate="{StaticResource GameRowTemplate}"
+                         ItemsSource="{Binding Games}"
+                         SelectedItem="{Binding SelectedGame}" />
+            </DockPanel>
+
+            <GridSplitter Grid.Column="1"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="Transparent"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          ShowsPreview="False"
+                          DragCompleted="OnSplitterDragCompleted"
+                          Cursor="SizeWE">
+                <GridSplitter.Template>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Grid Background="Transparent" />
+                    </ControlTemplate>
+                </GridSplitter.Template>
+            </GridSplitter>
+
+            <Border Grid.Column="2" Style="{StaticResource GB.Card}" Padding="0">
+                <Grid>
+                    <ContentControl Content="{Binding SelectedGame}"
+                                    ContentTemplate="{StaticResource DetailTemplate}"
+                                    Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}" />
+                    <TextBlock Text="选择左侧游戏查看详情"
+                               Style="{StaticResource GB.Muted}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="SettingsOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              Visibility="Collapsed"
+              Background="{DynamicResource WindowBackgourndBrush}">
+            <ContentControl x:Name="SettingsHost" />
+        </Grid>
+
+        <Grid x:Name="LocateOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              Visibility="Collapsed"
+              Background="#99000000">
+            <Border Style="{StaticResource GB.Card}"
+                    Width="760"
+                    MaxHeight="600"
+                    Padding="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <ContentControl x:Name="LocateHost" />
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
