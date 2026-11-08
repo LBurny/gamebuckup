@@ -5,22 +5,22 @@ English | [中文](README.zh-CN.md)
 [![CI](https://github.com/LBurny/gamebuckup/actions/workflows/ci.yml/badge.svg)](https://github.com/LBurny/gamebuckup/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-GameBackup is a save-game manager plugin for **Playnite 10.x**. It finds, backs up, restores, and tracks save files right from the Playnite sidebar — with platform-aware discovery and an optional AI fallback for games that manifest databases miss.
+GameBackup is a save-game manager plugin for **Playnite 10.x**. It finds, backs up, restores, and tracks save files from the Playnite sidebar. It knows where different stores keep their saves, and it can use AI as a fallback when it cannot find a game on its own.
 
 ## Features
 
-- **Smart discovery** — user rules, store IDs (Steam, Ubisoft Connect, GOG, Epic), common save folders, and install-directory heuristics.
-- **AI fallback** — optional OpenAI-compatible endpoint; confirmed results are remembered as local rules.
-- **Backup & restore** — configurable retention, backup history, and one-click rollback.
-- **Automatic backup** — runs when a game exits, with optional skipping for cloud-synced saves.
-- **Native UI** — lives in the Playnite sidebar and follows the active theme.
+- **Finds saves automatically.** It checks your own rules, store IDs from Steam, Ubisoft Connect, GOG and Epic, common save folders, and the game install folder.
+- **AI fallback.** You can connect an OpenAI-compatible endpoint. When you confirm a result, GameBackup saves it as a local rule and uses it next time.
+- **Backup and restore.** Choose how many backups to keep, browse the history, and roll back with one click.
+- **Automatic backup.** Back up when a game exits. You can skip games that already sync saves to the cloud.
+- **Native UI.** It lives in the Playnite sidebar and follows the current theme.
 
 ## Requirements
 
 - Playnite 10.63
-- .NET 8 SDK (build and tests)
+- .NET 8 SDK for building and testing
 
-The plugin targets .NET Framework 4.6.2 and runs inside the x86 Playnite process.
+The plugin targets .NET Framework 4.6.2 and runs inside the 32-bit Playnite process.
 
 ## Build
 
@@ -29,7 +29,7 @@ powershell -ExecutionPolicy Bypass -File build\build.ps1
 dotnet test tests\GameBackup.Core.Tests
 ```
 
-The plugin build reads `Playnite.SDK.dll` from `D:\Playnite\Playnite`; override with the `PlayniteDir` MSBuild property.
+The plugin looks for `Playnite.SDK.dll` in `D:\Playnite\Playnite`. Set the `PlayniteDir` MSBuild property if your Playnite is installed elsewhere.
 
 ## License
 
