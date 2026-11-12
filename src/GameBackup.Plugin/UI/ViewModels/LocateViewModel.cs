@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using GameBackup.Core.IO;
 using GameBackup.Core.Locating;
 using GameBackup.Core.Models;
 using GameBackup.Plugin.UI.Infrastructure;
@@ -217,8 +218,8 @@ namespace GameBackup.Plugin.UI.ViewModels
                 return;
             }
 
-            var isDirectory = Directory.Exists(path);
-            var isFile = File.Exists(path);
+            var isDirectory = LongPath.DirectoryExists(path);
+            var isFile = LongPath.FileExists(path);
             if (!isDirectory && !isFile)
             {
                 StatusText = "这个路径不存在，请确认后再试。";

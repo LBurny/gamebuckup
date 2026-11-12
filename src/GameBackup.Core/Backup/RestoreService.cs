@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using GameBackup.Core.IO;
 
 namespace GameBackup.Core.Backup
 {
@@ -45,7 +46,7 @@ namespace GameBackup.Core.Backup
                     return result;
                 }
 
-                var files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
+                var files = LongPath.GetFiles(source, SearchOption.AllDirectories);
                 var bytes = 0L;
 
                 foreach (var file in files)
@@ -86,11 +87,11 @@ namespace GameBackup.Core.Backup
                     var parent = Path.GetDirectoryName(destination);
                     if (!string.IsNullOrEmpty(parent))
                     {
-                        Directory.CreateDirectory(parent);
+                        LongPath.CreateDirectory(parent);
                     }
 
-                    File.Copy(file, destination, true);
-                    bytes += new FileInfo(file).Length;
+                    LongPath.CopyFile(file, destination, true);
+                    bytes += LongPath.GetFileSize(file);
                     result.FileCount++;
                 }
 
@@ -108,7 +109,7 @@ namespace GameBackup.Core.Backup
 
         private static string ResolveBackup(string gameFolder, string backupName)
         {
-            if (!Directory.Exists(gameFolder))
+            if (!LongPath.DirectoryExists(gameFolder))
             {
                 return null;
             }
@@ -116,13 +117,13 @@ namespace GameBackup.Core.Backup
             if (!string.IsNullOrWhiteSpace(backupName))
             {
                 var named = Path.Combine(gameFolder, backupName);
-                return Directory.Exists(named) ? named : null;
+                return LongPath.DirectoryExists(named) ? named : null;
             }
 
             var candidates = new List<string>();
 
             candidates.AddRange(
-                Directory.GetDirectories(gameFolder)
+                LongPath.GetDirectories(gameFolder)
                     .Where(path =>
                     {
                         var name = Path.GetFileName(path);
@@ -132,8 +133,8 @@ namespace GameBackup.Core.Backup
 
             // Older GameBackup builds stored drive folders above the backup folder.
             candidates.AddRange(
-                Directory.GetDirectories(gameFolder, "drive-*")
-                    .SelectMany(drive => Directory.GetDirectories(drive, "backup-*")));
+                LongPath.GetDirectories(gameFolder, "drive-*")
+                    .SelectMany(drive => LongPath.GetDirectories(drive, "backup-*")));
 
             return candidates
                 .OrderByDescending(x => Path.GetFileName(x), StringComparer.Ordinal)

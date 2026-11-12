@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using GameBackup.Core;
 using GameBackup.Core.Backup;
+using GameBackup.Core.IO;
 using GameBackup.Core.Llm;
 using GameBackup.Core.Locating;
 using GameBackup.Core.Models;
@@ -359,7 +360,7 @@ namespace GameBackup.Plugin
 
         private void OpenFolder(string path)
         {
-            if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+            if (string.IsNullOrWhiteSpace(path) || !LongPath.DirectoryExists(path))
             {
                 Notify("目录不存在：" + path, true);
                 return;
@@ -441,7 +442,7 @@ namespace GameBackup.Plugin
             if (rule?.Saves != null && rule.Saves.Length > 0)
             {
                 var saved = rule.Saves[0];
-                if (!string.IsNullOrEmpty(saved) && (File.Exists(saved) || Directory.Exists(saved)))
+                if (!string.IsNullOrEmpty(saved) && (LongPath.FileExists(saved) || LongPath.DirectoryExists(saved)))
                 {
                     return saved;
                 }
@@ -450,7 +451,7 @@ namespace GameBackup.Plugin
             // A previous backup records where the game's saves really live, which
             // beats guessing when the locators have no rule for it.
             var mapped = BackupInventory.GetOriginalSavePath(_settings.BackupRoot, game.Name);
-            if (!string.IsNullOrEmpty(mapped) && (File.Exists(mapped) || Directory.Exists(mapped)))
+            if (!string.IsNullOrEmpty(mapped) && (LongPath.FileExists(mapped) || LongPath.DirectoryExists(mapped)))
             {
                 return mapped;
             }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using GameBackup.Core.IO;
 
 namespace GameBackup.Core.Backup
 {
@@ -52,8 +53,8 @@ namespace GameBackup.Core.Backup
                 return result;
             }
 
-            var isFile = File.Exists(savePath);
-            var isDirectory = Directory.Exists(savePath);
+            var isFile = LongPath.FileExists(savePath);
+            var isDirectory = LongPath.DirectoryExists(savePath);
 
             if (!isFile && !isDirectory)
             {
@@ -64,7 +65,7 @@ namespace GameBackup.Core.Backup
             try
             {
                 var gameFolder = Path.Combine(backupRoot, LudusaviMapping.EscapeFolderName(gameName));
-                Directory.CreateDirectory(gameFolder);
+                LongPath.CreateDirectory(gameFolder);
 
                 var backupName = keepVersions == 1
                     ? "."
@@ -77,70 +78,86 @@ namespace GameBackup.Core.Backup
                     return result;
                 }
 
-                Directory.CreateDirectory(target);
-
-                var files = isFile
-                    ? new[] { savePath }
-                    : Directory.GetFiles(savePath, "*", SearchOption.AllDirectories);
+                var targetExisted = LongPath.DirectoryExists(target);
+                LongPath.CreateDirectory(target);
 
                 var entries = new List<MappingFileEntry>();
                 var drives = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var bytes = 0L;
 
-                foreach (var file in files)
+                try
                 {
-                    string drive;
-                    string remainder;
-                    LudusaviMapping.SplitDrive(file, out drive, out remainder);
+                    var files = isFile
+                        ? new[] { savePath }
+                        : LongPath.GetFiles(savePath, SearchOption.AllDirectories);
 
-                    drives.Add(drive);
-
-                    var destination = Path.Combine(
-                        target,
-                        LudusaviMapping.DriveFolderName(drive),
-                        remainder);
-
-                    var parent = Path.GetDirectoryName(destination);
-                    if (!string.IsNullOrEmpty(parent))
+                    foreach (var file in files)
                     {
-                        Directory.CreateDirectory(parent);
+                        string drive;
+                        string remainder;
+                        LudusaviMapping.SplitDrive(file, out drive, out remainder);
+
+                        drives.Add(drive);
+
+                        var destination = Path.Combine(
+                            target,
+                            LudusaviMapping.DriveFolderName(drive),
+                            remainder);
+
+                        var parent = Path.GetDirectoryName(destination);
+                        if (!string.IsNullOrEmpty(parent))
+                        {
+                            LongPath.CreateDirectory(parent);
+                        }
+
+                        LongPath.CopyFile(file, destination, true);
+
+                        var size = LongPath.GetFileSize(file);
+                        bytes += size;
+                        entries.Add(new MappingFileEntry(file, LudusaviMapping.Sha1OfFile(file), size));
                     }
 
-                    File.Copy(file, destination, true);
+                    var document = LudusaviMapping.Load(gameFolder);
+                    document.Name = gameName;
 
-                    var size = new FileInfo(file).Length;
-                    bytes += size;
-                    entries.Add(new MappingFileEntry(file, LudusaviMapping.Sha1OfFile(file), size));
-                }
-
-                var document = LudusaviMapping.Load(gameFolder);
-                document.Name = gameName;
-
-                foreach (var drive in drives)
-                {
-                    document.Drives[LudusaviMapping.DriveFolderName(drive)] = drive;
-                }
-
-                document.Backups.RemoveAll(
-                    block => string.Equals(
-                        LudusaviMapping.BlockName(block),
-                        backupName,
-                        StringComparison.Ordinal));
-
-                document.Backups.Add(
-                    LudusaviMapping.BuildBlock(backupName, timestampUtc, entries));
-
-                var removed = Trim(document, keepVersions);
-                LudusaviMapping.Save(gameFolder, document);
-
-                foreach (var name in removed)
-                {
-                    if (string.Equals(name, backupName, StringComparison.Ordinal))
+                    foreach (var drive in drives)
                     {
-                        continue;
+                        document.Drives[LudusaviMapping.DriveFolderName(drive)] = drive;
                     }
 
-                    TryDelete(Path.Combine(gameFolder, name));
+                    document.Backups.RemoveAll(
+                        block => string.Equals(
+                            LudusaviMapping.BlockName(block),
+                            backupName,
+                            StringComparison.Ordinal));
+
+                    document.Backups.Add(
+                        LudusaviMapping.BuildBlock(backupName, timestampUtc, entries));
+
+                    var removed = Trim(document, gameFolder, keepVersions, backupName);
+                    LudusaviMapping.Save(gameFolder, document);
+
+                    foreach (var name in removed)
+                    {
+                        if (string.Equals(name, backupName, StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        TryDelete(Path.Combine(gameFolder, name));
+                    }
+                }
+                catch
+                {
+                    // A half-written version would show up as a broken entry in
+                    // the history list, so drop it unless the folder existed
+                    // before this run (or is the shared single-version folder).
+                    if (!targetExisted && backupName != ".")
+                    {
+                        TryDelete(target);
+                    }
+
+                    throw;
                 }
 
                 result.Success = true;
@@ -157,10 +174,18 @@ namespace GameBackup.Core.Backup
         }
 
         /// <summary>
-        /// Drops the oldest full backups beyond the retention limit. Locked
-        /// backups are kept, matching Ludusavi's behaviour.
+        /// Drops the oldest full backups beyond the retention limit. The
+        /// folders on disk are the source of truth, because the settings page
+        /// lists them: a version left behind by an interrupted run has no
+        /// mapping block, but it still counts towards the user's limit and
+        /// must be pruned like any other. Locked backups are kept, matching
+        /// Ludusavi's behaviour.
         /// </summary>
-        private static List<string> Trim(MappingDocument document, int keepVersions)
+        private static List<string> Trim(
+            MappingDocument document,
+            string gameFolder,
+            int keepVersions,
+            string currentName)
         {
             var removed = new List<string>();
 
@@ -169,28 +194,48 @@ namespace GameBackup.Core.Backup
                 return removed;
             }
 
-            var fulls = document.Backups
-                .Select(block => new { Block = block, Name = LudusaviMapping.BlockName(block) })
-                .Where(x => !string.IsNullOrEmpty(x.Name) && x.Name != ".")
-                .OrderByDescending(x => x.Name, StringComparer.Ordinal)
+            var folders = LongPath
+                .GetDirectories(gameFolder)
+                .Select(Path.GetFileName)
+                .Where(name => !string.IsNullOrEmpty(name)
+                               && name.StartsWith("backup-", StringComparison.Ordinal)
+                               && !name.EndsWith("-diff", StringComparison.Ordinal))
+                .OrderByDescending(name => name, StringComparer.Ordinal)
                 .ToList();
 
-            var keep = fulls.Take(keepVersions).Select(x => x.Name).ToList();
+            var keep = new HashSet<string>(StringComparer.Ordinal);
 
-            foreach (var full in fulls)
+            // "." is the single-version folder: it already replaces every
+            // previous full backup, so none of the backup-* folders survive.
+            if (currentName != ".")
             {
-                if (keep.Contains(full.Name, StringComparer.Ordinal))
+                keep.UnionWith(folders.Take(keepVersions));
+            }
+
+            foreach (var block in document.Backups)
+            {
+                if (LudusaviMapping.BlockIsLocked(block))
+                {
+                    keep.Add(LudusaviMapping.BlockName(block));
+                }
+            }
+
+            foreach (var name in folders)
+            {
+                if (keep.Contains(name))
                 {
                     continue;
                 }
 
-                if (LudusaviMapping.BlockIsLocked(full.Block))
+                var block = document.Backups.FirstOrDefault(
+                    b => string.Equals(LudusaviMapping.BlockName(b), name, StringComparison.Ordinal));
+
+                if (block != null)
                 {
-                    continue;
+                    document.Backups.Remove(block);
                 }
 
-                document.Backups.Remove(full.Block);
-                removed.Add(full.Name);
+                removed.Add(name);
             }
 
             return removed;
@@ -200,9 +245,9 @@ namespace GameBackup.Core.Backup
         {
             try
             {
-                if (Directory.Exists(path))
+                if (LongPath.DirectoryExists(path))
                 {
-                    Directory.Delete(path, true);
+                    LongPath.DeleteDirectory(path);
                 }
             }
             catch
@@ -213,8 +258,8 @@ namespace GameBackup.Core.Backup
 
         private static bool IsInside(string candidate, string parent)
         {
-            var fullCandidate = Path.GetFullPath(candidate);
-            var fullParent = Path.GetFullPath(parent);
+            var fullCandidate = Path.GetFullPath(LongPath.FromIo(candidate));
+            var fullParent = Path.GetFullPath(LongPath.FromIo(parent));
             var prefix = fullParent.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             return fullCandidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
         }

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using GameBackup.Core.Backup;
+using GameBackup.Core.IO;
 using GameBackup.Core.Models;
 using GameBackup.Plugin.Adapters;
 using GameBackup.Plugin.UI.Infrastructure;
@@ -482,7 +483,7 @@ namespace GameBackup.Plugin.UI.ViewModels
 
             try
             {
-                var target = File.Exists(path) ? Path.GetDirectoryName(path) : path;
+                var target = LongPath.FileExists(path) ? Path.GetDirectoryName(path) : path;
                 if (!string.IsNullOrWhiteSpace(target))
                 {
                     Process.Start("explorer.exe", "\"" + target + "\"");

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using GameBackup.Core.IO;
 
 namespace GameBackup.Core.Backup
 {
@@ -85,7 +86,7 @@ namespace GameBackup.Core.Backup
 
         public static string Sha1OfFile(string path)
         {
-            using (var stream = File.OpenRead(path))
+            using (var stream = LongPath.OpenRead(path))
             using (var sha1 = SHA1.Create())
             {
                 var hash = sha1.ComputeHash(stream);
@@ -104,12 +105,12 @@ namespace GameBackup.Core.Backup
             var doc = new MappingDocument();
             var path = Path.Combine(gameFolder, FileName);
 
-            if (!File.Exists(path))
+            if (!LongPath.FileExists(path))
             {
                 return doc;
             }
 
-            var lines = File.ReadAllLines(path, Encoding.UTF8);
+            var lines = LongPath.ReadAllLines(path, Encoding.UTF8);
             var inBackups = false;
             var inDrives = false;
             List<string> current = null;
@@ -172,7 +173,7 @@ namespace GameBackup.Core.Backup
 
         public static void Save(string gameFolder, MappingDocument doc)
         {
-            Directory.CreateDirectory(gameFolder);
+            LongPath.CreateDirectory(gameFolder);
 
             var builder = new StringBuilder();
             builder.Append(Marker).Append('\n');
@@ -200,7 +201,7 @@ namespace GameBackup.Core.Backup
                 }
             }
 
-            File.WriteAllText(Path.Combine(gameFolder, FileName), builder.ToString(), new UTF8Encoding(false));
+            LongPath.WriteAllText(Path.Combine(gameFolder, FileName), builder.ToString(), new UTF8Encoding(false));
         }
 
         /// <summary>Builds one full-backup block in the shape Ludusavi deserializes.</summary>

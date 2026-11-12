@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using GameBackup.Core.IO;
 
 namespace GameBackup.Core.Backup
 {
@@ -44,12 +45,12 @@ namespace GameBackup.Core.Backup
             try
             {
                 var gameFolder = Path.Combine(backupRoot, LudusaviMapping.EscapeFolderName(gameName));
-                if (!Directory.Exists(gameFolder))
+                if (!LongPath.DirectoryExists(gameFolder))
                 {
                     return versions;
                 }
 
-                var folders = Directory
+                var folders = LongPath
                     .GetDirectories(gameFolder)
                     .Where(path =>
                     {
@@ -58,9 +59,9 @@ namespace GameBackup.Core.Backup
                                                && !name.EndsWith("-diff", StringComparison.Ordinal));
                     })
                     .Concat(
-                        Directory
+                        LongPath
                             .GetDirectories(gameFolder, "drive-*")
-                            .SelectMany(drive => Directory.GetDirectories(drive, "backup-*"))
+                            .SelectMany(drive => LongPath.GetDirectories(drive, "backup-*"))
                             .Where(path => !Path.GetFileName(path).EndsWith("-diff", StringComparison.Ordinal)))
                     .Select(path => new
                     {
@@ -73,13 +74,13 @@ namespace GameBackup.Core.Backup
 
                 foreach (var folder in folders)
                 {
-                    var files = Directory.GetFiles(folder.Path, "*", SearchOption.AllDirectories);
+                    var files = LongPath.GetFiles(folder.Path, SearchOption.AllDirectories);
                     versions.Add(new BackupSummary
                     {
                         Exists = true,
                         Directory = folder.Path,
                         FileCount = files.Length,
-                        TotalBytes = files.Sum(f => new FileInfo(f).Length),
+                        TotalBytes = files.Sum(LongPath.GetFileSize),
                         TimestampUtc = folder.Stamp,
                     });
                 }
@@ -103,18 +104,18 @@ namespace GameBackup.Core.Backup
         {
             var result = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
-            if (string.IsNullOrWhiteSpace(backupRoot) || !Directory.Exists(backupRoot))
+            if (string.IsNullOrWhiteSpace(backupRoot) || !LongPath.DirectoryExists(backupRoot))
             {
                 return result;
             }
 
             try
             {
-                foreach (var gameFolder in Directory.GetDirectories(backupRoot))
+                foreach (var gameFolder in LongPath.GetDirectories(backupRoot))
                 {
                     var stamps = new List<DateTime>();
 
-                    foreach (var child in Directory.GetDirectories(gameFolder))
+                    foreach (var child in LongPath.GetDirectories(gameFolder))
                     {
                         var name = Path.GetFileName(child);
 
@@ -133,7 +134,7 @@ namespace GameBackup.Core.Backup
                             try
                             {
                                 stamps.AddRange(
-                                    Directory.GetDirectories(child, "backup-*")
+                                    LongPath.GetDirectories(child, "backup-*")
                                         .Select(path => Path.GetFileName(path))
                                         .Where(name2 => !name2.EndsWith("-diff", StringComparison.Ordinal))
                                         .Select(ParseStamp));

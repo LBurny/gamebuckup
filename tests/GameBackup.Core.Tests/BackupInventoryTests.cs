@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using GameBackup.Core.Backup;
+using GameBackup.Core.IO;
 using Xunit;
 
 namespace GameBackup.Core.Tests
@@ -19,11 +20,32 @@ namespace GameBackup.Core.Tests
         {
             try
             {
-                Directory.Delete(_root, true);
+                if (LongPath.DirectoryExists(_root))
+                {
+                    LongPath.DeleteDirectory(_root);
+                }
             }
             catch
             {
             }
+        }
+
+        [Fact]
+        public void Versions_report_files_whose_paths_exceed_max_path()
+        {
+            var backups = Path.Combine(_root, "backups");
+            var save = LongPathScenario.CreateSave(_root);
+            var when = new DateTime(2026, 11, 8, 12, 34, 56, DateTimeKind.Utc);
+            var stamp = "backup-" + LudusaviMapping.TimestampName(when);
+            var game = LongPathScenario.GameNameFor(backups, stamp, save);
+
+            var backup = new BackupService().Backup(backups, game, save, when, 10);
+            Assert.True(backup.Success, backup.Error);
+
+            var only = Assert.Single(BackupInventory.GetVersions(backups, game));
+
+            Assert.Equal(1, only.FileCount);
+            Assert.Equal(3, only.TotalBytes);
         }
 
         [Fact]

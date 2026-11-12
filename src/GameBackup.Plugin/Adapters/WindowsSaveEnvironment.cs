@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using GameBackup.Core.IO;
 using GameBackup.Core.Scanning;
 using Microsoft.Win32;
 
@@ -128,7 +129,7 @@ namespace GameBackup.Plugin.Adapters
             try
             {
                 var full = Path.GetFullPath(path.Trim().Trim('"').TrimEnd('\\', '/'));
-                return Directory.Exists(full) ? full : string.Empty;
+                return LongPath.DirectoryExists(full) ? full : string.Empty;
             }
             catch
             {

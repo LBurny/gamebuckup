@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using GameBackup.Core.Backup;
+using GameBackup.Core.IO;
 using Xunit;
 
 namespace GameBackup.Core.Tests
@@ -145,6 +146,64 @@ namespace GameBackup.Core.Tests
         }
 
         [Fact]
+        public void Backup_prunes_versions_that_have_no_mapping_block()
+        {
+            var save = CreateSaveFolder();
+            var backups = Path.Combine(_root, "backups");
+            var gameFolder = Path.Combine(backups, "Test Game");
+            Directory.CreateDirectory(gameFolder);
+
+            // Interrupted runs used to leave folders behind without a mapping
+            // block; they still show up in the history list and must count
+            // towards the retention limit.
+            for (var day = 0; day < 5; day++)
+            {
+                var orphan = Path.Combine(gameFolder, "backup-2026110" + day + "T000000Z");
+                Directory.CreateDirectory(orphan);
+                File.WriteAllText(Path.Combine(orphan, "slot1.sav"), "orphan");
+            }
+
+            var result = new BackupService().Backup(
+                backups, "Test Game", save, new DateTime(2026, 11, 8, 12, 34, 56, DateTimeKind.Utc), 5);
+
+            Assert.True(result.Success, result.Error);
+
+            var versions = Directory
+                .GetDirectories(gameFolder, "backup-*")
+                .Select(Path.GetFileName)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToList();
+
+            Assert.Equal(5, versions.Count);
+            Assert.DoesNotContain("backup-20261100T000000Z", versions);
+            Assert.DoesNotContain(
+                "backup-20261100T000000Z",
+                File.ReadAllText(Path.Combine(gameFolder, "mapping.yaml")));
+        }
+
+        [Fact]
+        public void Single_version_mode_removes_older_full_backups()
+        {
+            var save = CreateSaveFolder();
+            var backups = Path.Combine(_root, "backups");
+            var gameFolder = Path.Combine(backups, "Test Game");
+            var service = new BackupService();
+
+            service.Backup(backups, "Test Game", save, new DateTime(2026, 11, 8, 12, 0, 0, DateTimeKind.Utc), 10);
+            service.Backup(backups, "Test Game", save, new DateTime(2026, 11, 8, 13, 0, 0, DateTimeKind.Utc), 10);
+
+            var result = service.Backup(backups, "Test Game", save, new DateTime(2026, 11, 8, 14, 0, 0, DateTimeKind.Utc), 1);
+
+            Assert.True(result.Success, result.Error);
+            Assert.Equal(Path.Combine(gameFolder, "."), result.BackupDirectory);
+            Assert.Empty(Directory.GetDirectories(gameFolder, "backup-*"));
+
+            var mapping = File.ReadAllText(Path.Combine(gameFolder, "mapping.yaml"));
+            Assert.DoesNotContain("backup-20261108T120000Z", mapping);
+            Assert.Contains("name: '.'", mapping);
+        }
+
+        [Fact]
         public void Backup_fails_when_the_save_path_is_missing()
         {
             var result = new BackupService().Backup(
@@ -178,6 +237,55 @@ namespace GameBackup.Core.Tests
         {
             Assert.Equal("Onimusha_ Way of the Sword", LudusaviMapping.EscapeFolderName("Onimusha: Way of the Sword"));
             Assert.Equal("_hidden", LudusaviMapping.EscapeFolderName(".hidden"));
+        }
+
+        [Fact]
+        public void Backup_copies_files_whose_backup_path_exceeds_max_path()
+        {
+            var backups = Path.Combine(_root, "backups");
+            var save = LongPathScenario.CreateSave(_root);
+            var when = new DateTime(2026, 11, 8, 12, 34, 56, DateTimeKind.Utc);
+            var stamp = "backup-" + LudusaviMapping.TimestampName(when);
+            var game = LongPathScenario.GameNameFor(backups, stamp, save);
+            var target = LongPathScenario.BackupTarget(
+                backups, game, stamp, LongPathScenario.SaveFileFor(save));
+
+            Assert.True(target.Length > LongPathScenario.MaxPath);
+
+            var result = new BackupService().Backup(backups, game, save, when, 10);
+
+            Assert.True(result.Success, result.Error);
+            Assert.Equal(1, result.FileCount);
+            Assert.True(LongPath.FileExists(target));
+            Assert.Equal("one", File.ReadAllText(LongPath.ForIo(target)));
+
+            var mapping = File.ReadAllText(Path.Combine(backups, game, "mapping.yaml"));
+            Assert.Contains(LongPathScenario.SaveFileFor(save), mapping);
+            Assert.DoesNotContain(@"\\?\", mapping);
+        }
+
+        [Fact]
+        public void Backup_discards_the_half_written_version_when_a_file_cannot_be_copied()
+        {
+            var save = CreateSaveFolder();
+            var backups = Path.Combine(_root, "backups");
+            var locked = Path.Combine(save, "locked.sav");
+            File.WriteAllText(locked, "locked");
+
+            BackupResult result;
+            using (new FileStream(locked, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                result = new BackupService().Backup(
+                    backups,
+                    "Test Game",
+                    save,
+                    new DateTime(2026, 11, 8, 12, 34, 56, DateTimeKind.Utc),
+                    10);
+            }
+
+            Assert.False(result.Success);
+            Assert.False(string.IsNullOrWhiteSpace(result.Error));
+            Assert.False(Directory.Exists(Path.Combine(backups, "Test Game", "backup-20261108T123456Z")));
         }
     }
 }

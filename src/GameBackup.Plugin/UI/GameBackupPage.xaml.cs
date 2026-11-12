@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using GameBackup.Core.Backup;
+using GameBackup.Core.IO;
 using GameBackup.Core.Llm;
 using GameBackup.Core.Locating;
 using GameBackup.Core.Models;
@@ -497,7 +498,7 @@ namespace GameBackup.Plugin.UI
             ApplyCandidate(row, new SaveCandidate
             {
                 Path = row.SavePath,
-                Kind = File.Exists(row.SavePath) ? CandidateKind.File : CandidateKind.Directory,
+                Kind = LongPath.FileExists(row.SavePath) ? CandidateKind.File : CandidateKind.Directory,
                 Confidence = 1.0,
                 Source = row.DetectedSource,
                 Evidence = "用户确认",
@@ -546,7 +547,7 @@ namespace GameBackup.Plugin.UI
                 }
 
                 var path = rule.Saves[0];
-                var exists = File.Exists(path) || Directory.Exists(path);
+                var exists = LongPath.FileExists(path) || LongPath.DirectoryExists(path);
 
                 row.SavePath = path;
                 row.DetectedSource = CandidateSource.UserRule;
